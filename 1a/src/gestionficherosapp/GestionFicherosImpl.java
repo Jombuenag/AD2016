@@ -1,6 +1,9 @@
 package gestionficherosapp;
 
 import java.io.File;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 
 import gestionficheros.FormatoVistas;
 import gestionficheros.GestionFicheros;
@@ -48,7 +51,7 @@ public class GestionFicherosImpl implements GestionFicheros {
 	@Override
 	public void arriba() {
 
-		System.out.println("holaaa");
+		System.out.println("upstairs");
 		if (carpetaDeTrabajo.getParentFile() != null) {
 			carpetaDeTrabajo = carpetaDeTrabajo.getParentFile();
 			actualiza();
@@ -59,10 +62,17 @@ public class GestionFicherosImpl implements GestionFicheros {
 	@Override
 	public void creaCarpeta(String arg0) throws GestionFicherosException {
 		File file = new File(carpetaDeTrabajo,arg0);
+		if(!file.exists()){
+			if(file.mkdir()){
+				System.out.println("Se ha creado la carpeta");
+			}else{
+				throw new GestionFicherosException("Error. No se ha podido "
+						+ "crear la carpeta " + file.getAbsolutePath());
+			}
+		}
 		//que se pueda escribir -> lanzará una excepción
 		//que no exista -> lanzará una excepción
 		//crear la carpeta -> lanzará una excepción
-		actualiza();
 	}
 
 	@Override
@@ -140,7 +150,9 @@ public class GestionFicherosImpl implements GestionFicheros {
 		
 		StringBuilder strBuilder=new StringBuilder();
 		File file = new File(carpetaDeTrabajo,arg0);
-		
+		String ubicacion = new String();
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
+		DecimalFormat dF = new DecimalFormat("#0.000000");
 		//Controlar que existe. Si no, se lanzará una excepción
 		//Controlar que haya permisos de lectura. Si no, se lanzará una excepción
 		
@@ -154,19 +166,65 @@ public class GestionFicherosImpl implements GestionFicheros {
 		strBuilder.append("\n");
 		
 		//Tipo: fichero o directorio
+		strBuilder.append("Tipo: ");
+		if(file.isDirectory()){
+			strBuilder.append(" Directorio");
+		}else{
+			strBuilder.append(" Archivo");
+		}
+		strBuilder.append("\n");
 		
 		//Ubicación
-		
+		strBuilder.append("Ubicación : ");
+		try {
+			file.getCanonicalPath();
+			ubicacion = file.toString();
+			strBuilder.append(" " + ubicacion);
+			strBuilder.append("\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		//Fecha de última modificación
-		
+		strBuilder.append("Ultima modificacíon: ");
+		strBuilder.append(sdf.format(file.lastModified()));
+		strBuilder.append("\n");
 		//Si es un fichero oculto o no
-		
+		strBuilder.append("Oculto: ");
+		if(!file.isHidden()){
+			strBuilder.append("No está oculto");
+		}else{
+			strBuilder.append("Está oculto");
+		}
+		strBuilder.append("\n\n");
 		//Si es directorio: Espacio libre, espacio disponible, espacio total
 		//bytes
+		strBuilder.append("INFORMACIÓN SECUNDARIA");
+		strBuilder.append("\n\n");
+		if(file.isDirectory()){
+			strBuilder.append("Espacio Libre: ");
+			strBuilder.append(file.getFreeSpace() /1024 /1024 + " Mb" + "\n");
+			strBuilder.append("Espacio Disponible: ");	
+			strBuilder.append(file.getUsableSpace() /1024 /1024 + " Mb" + "\n");
+			strBuilder.append("Espacio Total: ");
+			strBuilder.append(file.getTotalSpace() /1024 /1024 + " Mb" + "\n");
+			strBuilder.append("\n");
+		}
+		if(!file.isDirectory()){
+			double bytes = file.length();
+			strBuilder.append("Tamaño del archivo: ");
+			strBuilder.append(dF.format(bytes /1024 /1024) +" Mb" + "\n");
+		}
+
+		if(file.isDirectory()){
+			strBuilder.append("Número de archivos: ");
+			File[] files = file.listFiles();
+			strBuilder.append(files.length);
+			strBuilder.append("\n");
+		}
 		
 		return strBuilder.toString();
 	}
-
+	
 	@Override
 	public boolean getMostrarOcultos() {
 		// TODO Auto-generated method stub
@@ -209,8 +267,7 @@ public class GestionFicherosImpl implements GestionFicheros {
 	}
 
 	@Override
-	public void renombra(String arg0, String arg1)
-			throws GestionFicherosException {
+	public void renombra(String arg0, String arg1) throws GestionFicherosException {
 		// TODO Auto-generated method stub
 
 	}
